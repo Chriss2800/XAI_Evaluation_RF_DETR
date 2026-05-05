@@ -1,5 +1,11 @@
 # XAI_Evaluation_RF_DETR
 
+This repository contains the code for a study on explainable AI for transformer-based medical object detection. The goal is to train and evaluate an RF-DETR Medium model for lung nodule detection on the Lung-PET-CT-Dx dataset and to compare different XAI methods with respect to how well their explanations spatially correspond to annotated tumor regions.
+
+The workflow covers the full experimental pipeline: DICOM images and XML annotations are first converted into a YOLO-compatible dataset, then transformed into COCO format for RF-DETR training. After training, the model is evaluated using standard object detection metrics at different IoU thresholds. Finally, Grad-CAM, Attention Rollout, and D-RISE are applied to the trained model and quantitatively compared using Pointing Game, Energy-Based Pointing Game, and IoU-based explanation metrics.
+
+The analysis focuses on both detection performance and explanation quality. In addition to the overall XAI comparison, the results are grouped by imaging modality and cancer subtype to examine whether explanation behavior differs between CT, PET/CT, and tumor classes.
+
 # dataprep.py
 
 This script prepares the Lung-PET-CT-Dx dataset for object detection training in YOLO format. It reads DICOM images and their corresponding XML annotations, converts CT slices into PNG images, and exports the bounding boxes as YOLO label files.
@@ -104,17 +110,19 @@ This notebook analyzes the XAI evaluation results from the JSON output file. It 
 
 # XAI_statistical_testing.ipynb
 
-This notebook performs statistical testing on the per-sample XAI metrics exported by the XAI evaluation script. It uses the `results_eval_1_per_sample_metrics.csv` file as input and compares Grad-CAM, Attention Rollout, and D-RISE across Pointing Game, Energy-Based Pointing Game, and IoU.
+This notebook performs statistical testing on the per-sample XAI metrics exported by the XAI evaluation script. It compares Grad-CAM, Attention Rollout, and D-RISE using paired statistical tests for Pointing Game, Energy-Based Pointing Game, and IoU.
 
 ## Important Notes
 
-- The notebook expects a per-sample metrics CSV file, for example `outputs/results_eval_1_per_sample_metrics.csv`.
-- This CSV is created by the XAI evaluation script after computing Grad-CAM, Attention Rollout, and D-RISE.
+- The notebook expects a per-sample metrics CSV file, for example `outputs/results_eval_per_sample_metrics.csv`.
+- This input CSV is created by the XAI evaluation script after computing Grad-CAM, Attention Rollout, and D-RISE.
 - Required columns are `sample_id`, `image_id`, `file_name`, `method`, `pg`, `ebpg`, and `iou`.
 - The notebook adds modality labels based on `8bit` and `16bit` file names.
 - The notebook adds cancer type labels based on filename prefixes `A`, `B`, `E`, and `G`.
 - Pointing Game is tested with the exact McNemar test because it is binary.
 - EBPG and IoU are tested with the Wilcoxon signed-rank test because they are paired numerical metrics.
 - Holm-Bonferroni correction is applied to adjust for multiple comparisons.
-- The notebook creates additional CSV outputs with summary tables and statistical test results.
-- Outputs are saved under `outputs/xai_statistics_from_csv`.
+- The notebook saves the following CSV files to `outputs/`:
+  - `xai_per_sample_metrics_with_groups.csv`: per-sample metrics with added modality and cancer-type group labels.
+  - `xai_summary_table.csv`: grouped summary table for PG, EBPG, and IoU across methods and groups.
+  - `xai_statistical_tests_total.csv`: statistical test results comparing the XAI methods on the full dataset.
